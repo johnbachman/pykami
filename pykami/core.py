@@ -285,6 +285,7 @@ class KeyResidue(Component):
 class Flag(object):
     def __init__(self, name, formula=None):
         self.id = get_id()
+        #self.name = '%s%s' % (name, self.id)
         self.name = name
         self.formula = formula
         self.style = {'color':'pink', 'style': 'filled', 'shape':'component',
@@ -299,8 +300,9 @@ class Flag(object):
 class Attribute(Flag):
     def __init__(self, name, formula):
         super(Attribute, self).__init__(name, formula)
-        self.style = {'color':'purple', 'style': 'filled', 'shape':'component',
-                      'fontname': 'arial', 'fontsize': 10, 'size': 15}
+        self.style = {'color':'sandybrown', 'style': 'filled',
+                      'shape':'component', 'fontname': 'arial',
+                      'fontsize': 10, 'size': 15}
 
 # Relationships ===============================================================
 
@@ -351,13 +353,6 @@ class Bind(UndirectedNAry):
         super(Bind, self).__init__()
         self.node_list = [node1, node2]
         self.short_name = 'b'
-        self.id = '%s%d' % (self.short_name, self.id)
-
-class Complex(UndirectedNAry):
-    def __init__(self, node_list):
-        super(Complex, self).__init__()
-        self.node_list = node_list
-        self.short_name = 'cplx'
         self.id = '%s%d' % (self.short_name, self.id)
 
 if __name__ == '__main__':
