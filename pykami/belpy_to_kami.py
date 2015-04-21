@@ -42,20 +42,18 @@ class BelpyKamiConverter(object):
             # Does this agent already have a site for this residue?
             kr_name = '%s%s' % (residue_name[bp_stmt.mod], bp_stmt.mod_pos)
             kr = sub_agent.get_create_key_residue(kr_name)
-            # Add the flag to the site
-            flag = kr.get_create_flag(flag_name)
-            nodes += [kr, flag]
             # Add edge between enzyme and substrate site
             phos = Phosphorylation(enz_agent, kr)
-            relationships = [phos]
+            # Add the flag to the site
+            flag = kr.get_create_flag(flag_name)
             if flag.formula is None:
                 flag.formula = str(phos.id)
             else:
                 flag.formula += ' or %s' % phos.id
+            nodes += [kr, flag, phos]
         else:
             # Add edge between enzyme and substrate agent
             phos = Phosphorylation(enz_agent, sub_agent)
-            relationships = [phos]
             # Add the flag to the substrate agent, dependent on the specific
             # phosphorylation relationship
             flag = sub_agent.get_create_flag(flag_name)
@@ -63,10 +61,9 @@ class BelpyKamiConverter(object):
                 flag.formula = str(phos.id)
             else:
                 flag.formula += ' or %s' % phos.id
-
-            nodes += [flag]
+            nodes += [flag, phos]
         # Return the 3-4 nodes we've obtained/created
-        return (nodes, relationships)
+        return nodes
 
 if __name__ == '__main__':
     with open(sys.argv[1]) as f:
@@ -75,13 +72,11 @@ if __name__ == '__main__':
     bkc = BelpyKamiConverter()
 
     nodes = set([])
-    relationships = set([])
     for stmt in bps:
         if isinstance(stmt, belpy.statements.Phosphorylation):
-            (new_nodes, new_relationships) = bkc.phosphorylation(stmt)
+            new_nodes = bkc.phosphorylation(stmt)
             nodes.update(new_nodes)
-            relationships.update(new_relationships)
 
-    kg = Graph('example_graph', agents=nodes, relationships=relationships)
+    kg = Graph('example_graph', nodes=nodes)
     kg.render()
     kg.write()

@@ -4,33 +4,82 @@ edge_style = {'fontname': 'arial', 'fontsize': 9}
 id_counter = 0
 
 def get_id():
+    """Get a unique identifier for each component as it is created."""
     global id_counter
     id_counter += 1
     return id_counter
 
+
 class Graph(object):
-    def __init__(self, name, agents, relationships):
+    """A container for the nodes and relationships in the graph.
+
+    Contains the top-level method for rendering the graph in GraphViz.
+
+    Parameters
+    ----------
+    name : string
+        The name of the graph.
+    nodes : list of nodes
+        The list should contain all relevant Agents and Relationships.  Though
+        Sites and KeyResidues can be included in this list, they are ignored
+        in the top-level rendering step because they are (currently)
+        presumed to be contained with Agents.
+
+    Attributes
+    ----------
+    g : pygraphviz.AGraph
+        Instance of the PyGraphviz graph to which the nodes are rendered.
+    """
+    def __init__(self, name, nodes):
         self.name = name
-        self.agents = agents
-        self.relationships = relationships
+        self.nodes = nodes
         self.g = AGraph(name=name, directed=True)
 
     def render(self):
-        # Iterate over all of the agents...
-        for agent in self.agents:
-            if isinstance(agent, Agent):
-                agent.render(self.g)
-        # For all of the relationships...
-        for rel in self.relationships:
-            # Render the relationship
+        """Recursively render nodes, sub-nodes and edges.
+
+        Builds up the pygraphviz graph data structure but does not write the
+        graph to a file.
+
+        The agents and their sub-nodes (sites, key residues) are rendered
+        first, and the relationships (with edges connecting agents) are
+        rendered afterwards, because the node labels and properties do not
+        come out correctly if the nodes are referenced by an edge before
+        they are explicitly created.
+        """
+        relationships = []
+        # Iterate over all of the nodes, rendering only the agents (but
+        # collecting the relationships for the next round of rendering)
+        for node in self.nodes:
+            if isinstance(node, Agent):
+                node.render(self.g)
+            elif isinstance(node, Relationship):
+                relationships.append(node)
+        # Iterate again, rendering the relationships this time
+        for rel in relationships:
             rel.render(self.g)
 
     def write(self):
+        """Write the graph to a file after rendering."""
         self.g.write('%s.dot' % self.name)
 
+
 class Component(object):
-    def __init__(self, name=None, is_abstract=False, flags=None, attributes=None,
-                 annotations=None):
+    """Parent class for Agents, Sites, and KeyResidues.
+
+    Agents, Sites and KeyResidues all shared functionality, in particular they
+    can contain flags, attributes, and annotations.
+
+    Attributes
+    ----------
+    flags : dict
+        Dictionary mapping the name of a flag to the Flag object.
+    attributes : dict
+        Dictionary mapping the name of an attribute to the Attribute object.
+    """
+    def __init__(self, name=None, is_abstract=False, flags=None,
+                 attributes=None, annotations=None):
+        # Get a globally unique, numeric identifier for the component
         self.id = get_id()
         self.name = name
         self.is_abstract = is_abstract
@@ -47,12 +96,16 @@ class Component(object):
         for attribute in attributes:
             self.add_attribute(attribute)
         # Any additional information
+        if annotations is None:
+            annotations = []
         self.annotations = annotations
 
     def add_flag(self, flag):
+        """Add a flag to the flags dict."""
         self.flags[flag.name] = flag
 
     def get_create_flag(self, flag_name):
+        """Return the flag with the given name if present, or create it."""
         if flag_name in self.flags:
             return self.flags[flag_name]
         else:
@@ -61,9 +114,11 @@ class Component(object):
             return flag
 
     def add_attribute(self, attribute):
+        """Add an attribute to the attributes dict."""
         self.attributes[attribute.name] = attribute
 
     def get_create_attribute(self, attribute_name):
+        """Return the attribute with the given name if present, or create it."""
         if attribute_name in self.attributes:
             return self.attributes[attribute_name]
         else:
@@ -71,12 +126,30 @@ class Component(object):
             self.attributes[attribute_name] = attribute
             return attribute
 
+    def render(self, g):
+        """Render flags and attributes for the component."""
+        component_nodes = []
+        # Iterate over any flags associated with this component
+        for flag_name, flag in self.flags.iteritems():
+            flag_nodes = flag.render(g)
+            component_nodes += flag_nodes
+            g.add_edge(self.id, flag.id, label='flag', **edge_style)
+        # Iterate over any attributes associated with this component
+        for attribute_name, attribute in self.attributes.iteritems():
+            attribute_nodes = attribute.render(g)
+            component_nodes += attribute_nodes
+            g.add_edge(self.id, attribute.id, label='attr', **edge_style)
+        return component_nodes
+
     def __str__(self):
-        return self.name
+        return ("%s(%s)" % (type(self).__name__, self.name))
+
 
 class Agent(Component):
+    """Top-level nodes containing sites and key residues (e.g., proteins)"""
     def __init__(self, name, sites=None, key_residues=None, is_abstract=False,
                  flags=None, attributes=None, annotations=None):
+        # Parent constructor
         super(Agent, self).__init__(name, is_abstract=is_abstract, flags=flags,
                                     attributes=attributes,
                                     annotations=annotations)
@@ -92,15 +165,13 @@ class Agent(Component):
             key_residues = []
         for kr in self.key_residues:
             self.add_key_residue(kr)
-        # Annotations
-        if annotations is None:
-            annotations = []
-        self.annotations = annotations
 
     def add_site(self, site):
+        """Add a site to the sites dict."""
         self.sites[site.name] = site
 
     def get_create_site(self, site_name):
+        """Return the site with the given name if present, or create it."""
         if site_name in self.sites:
             return self.sites[site_name]
         else:
@@ -109,9 +180,11 @@ class Agent(Component):
             return site
 
     def add_key_residue(self, kr):
+        """Add a key residue ite to the key residues dict."""
         self.key_residues[kr.name] = kr
 
     def get_create_key_residue(self, kr_name):
+        """Return the residue with the given name if present, or create it."""
         if kr_name in self.key_residues:
             return self.key_residues[kr_name]
         else:
@@ -120,6 +193,10 @@ class Agent(Component):
             return kr
 
     def render(self, g):
+        """Build the graph for the agent and its subnodes.
+
+        Subnodes include sites, key residues, flags, and attributes.
+        """
         # Style parameters for agent nodes
         agent_style = {'color': 'lightgrey', 'style': 'filled',
                        'fontname': 'arial'}
@@ -141,20 +218,25 @@ class Agent(Component):
             kr_nodes = kr.render(g)
             agent_nodes += kr_nodes
             g.add_edge(self.id, kr.id, label='kr', **edge_style)
-        # Iterate over any flags associated with this agent
-        for flag_name, flag in self.flags.iteritems():
-            flag_nodes = flag.render(g)
-            agent_nodes += flag_nodes
-            g.add_edge(self.id, flag.id, label='flag', **edge_style)
+        # Call the Component render method to render flags and attributes
+        flags_attrs = super(Agent, self).render(g)
+        agent_nodes += flags_attrs
         # Create a subgraph for the agent, its sites and key residues
         g.add_subgraph(agent_nodes, 'cluster_%s' % self.id)
         return agent_nodes
 
+
 class Site(Component):
+    """Nodes representing logical or physical states of proteins.
+
+    Sites can contain key residues but not agents or other sites.
+    """
     def __init__(self, name, key_residues=None, is_abstract=False, flags=None,
                  attributes=None, annotations=None):
+        # Parent constructor
         super(Site, self).__init__(name, is_abstract=is_abstract, flags=flags,
-                                   attributes=attributes, annotations=annotations)
+                                   attributes=attributes,
+                                   annotations=annotations)
         # Key residues
         self.key_residues = {}
         if key_residues is None:
@@ -163,6 +245,10 @@ class Site(Component):
             self.add_key_residue(kr)
 
     def render(self, g):
+        """Build the graph for the site and its subnodes.
+
+        Subnodes include key residues, flags, and attributes.
+        """
         site_style = {'color': 'red', 'style': 'filled', 'fontname': 'arial'}
         # Add this site to the graph and the list of nodes
         g.add_node(self.id, label=self.name, **site_style)
@@ -172,26 +258,28 @@ class Site(Component):
             kr.render(g)
             site_nodes.append(kr.id)
             g.add_edge(self.id, kr.id, 'kr', **edge_style)
-        # Iterate over any flags associated with this agent
-        for flag_name, flag in self.flags.iteritems():
-            flag.render(g)
-            site_nodes.append(flag.id)
-            g.add_edge(self.id, flag.id, label='flag', **edge_style)
+        # Call the Component render method to render flags and attributes
+        flags_attrs = super(Site, self).render(g)
+        site_nodes += flags_attrs
         return site_nodes
 
 class KeyResidue(Component):
-    def __init(self, name):
-        self.name = name
+    """Amino acid residues defining agent/site functionality.
 
+    Because they only have the functionality of the base Component class,
+    a specific constructor is not implemented here.
+    """
     def render(self, g):
+        """Build the graph for the key residue and its subnodes.
+
+        Subnodes include flags and attributes.
+        """
         kr_style = {'color': 'green', 'style': 'filled', 'fontname': 'arial'}
         g.add_node(self.id, label=self.name, **kr_style)
         kr_nodes = [self.id]
-        # Iterate over any flags associated with this key residue
-        for flag_name, flag in self.flags.iteritems():
-            flag.render(g)
-            kr_nodes.append(flag.id)
-            g.add_edge(self.id, flag.id, label='flag', **edge_style)
+        # Call the Component render method to render flags and attributes
+        flags_attrs = super(KeyResidue, self).render(g)
+        kr_nodes += flags_attrs
         return kr_nodes
 
 class Flag(object):
@@ -211,7 +299,7 @@ class Flag(object):
 class Attribute(Flag):
     def __init__(self, name, formula):
         super(Attribute, self).__init__(name, formula)
-        self.style = {'color':'green', 'style': 'filled', 'shape':'component',
+        self.style = {'color':'purple', 'style': 'filled', 'shape':'component',
                       'fontname': 'arial', 'fontsize': 10, 'size': 15}
 
 # Relationships ===============================================================
