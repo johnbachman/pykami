@@ -1,4 +1,5 @@
 from pygraphviz import *
+
 edge_style = {'fontname': 'arial', 'fontsize': 9}
 
 id_counter = 0
@@ -356,29 +357,28 @@ class Bind(UndirectedNAry):
         self.id = '%s%d' % (self.short_name, self.id)
 
 if __name__ == '__main__':
-    agents = []
-    rel = []
+    nodes = []
 
     ITGA3 = Agent('ITGA3')
-    agents.append(ITGA3)
+    nodes.append(ITGA3)
 
     ITGAV = Agent('ITGAV')
-    agents.append(ITGAV)
+    nodes.append(ITGAV)
 
-    c = Complex([ITGA3, ITGAV])
-    rel.append(c)
+    c = Bind(ITGA3, ITGAV)
+    nodes.append(c)
 
     SHC1 = Agent('SHC1')
-    agents.append(SHC1)
+    nodes.append(SHC1)
 
     GRB2 = Agent('GRB2')
-    agents.append(GRB2)
+    nodes.append(GRB2)
 
     SRC = Agent('SRC')
-    agents.append(SRC)
+    nodes.append(SRC)
 
     RAF1 = Agent('RAF1')
-    agents.append(RAF1)
+    nodes.append(RAF1)
     RAF1_Y341 = KeyResidue('Y341')
     RAF1.add_key_residue(RAF1_Y341)
     RAF1_S338 = KeyResidue('S338')
@@ -388,19 +388,19 @@ if __name__ == '__main__':
 
     # Src phosphorylates RAF1 on Y341
     p = Phosphorylation(SRC, RAF1_Y341)
-    rel.append(p)
+    nodes.append(p)
 
     p = Phosphorylation(RAF1, RAF1_S338)
-    rel.append(p)
+    nodes.append(p)
 
     b = Bind(SHC1, GRB2)
-    rel.append(b)
+    nodes.append(b)
 
     SOS1 = Agent('SOS1')
-    agents.append(SOS1)
+    nodes.append(SOS1)
     b = Bind(SHC1, SOS1)
-    rel.append(b)
+    nodes.append(b)
 
-    kg = Graph('example_graph', agents=agents, relationships=rel)
+    kg = Graph('example_graph', nodes)
     kg.render()
     kg.write()
