@@ -41,17 +41,17 @@ class BelpyKamiConverter(object):
         if bp_stmt.mod_pos:
             # Does this agent already have a site for this residue?
             # FIXME This should be canonicalized in some way
-            kr_name = '%s%s' % (residue_name[bp_stmt.mod], bp_stmt.mod_pos)
-            kr = sub_agent.get_create_key_residue(kr_name)
+            site_name = '%s%s' % (residue_name[bp_stmt.mod], bp_stmt.mod_pos)
+            site = sub_agent.get_create_site(site_name)
             # Add edge between enzyme and substrate site
-            phos = Phosphorylation(enz_agent, kr)
+            phos = Phosphorylation(enz_agent, site)
             # Add the flag to the site
-            flag = kr.get_create_flag(flag_name)
+            flag = site.get_create_flag(flag_name)
             if flag.formula is None:
                 flag.formula = str(phos.id)
             else:
                 flag.formula += ' or %s' % phos.id
-            nodes += [kr, flag, phos]
+            nodes += [site, flag, phos]
         else:
             # Add edge between enzyme and substrate agent
             phos = Phosphorylation(enz_agent, sub_agent)
@@ -73,15 +73,19 @@ class BelpyKamiConverter(object):
         # Add an "activity" attribute to the agent
         activity_name = '%s_active' % bp_stmt.activity
         active_attr = agent.get_create_attribute(activity_name)
+
         # FIXME This should be canonicalized in some way
-        kr_name = '.'.join(['%s%s' %(residue_name[m],p) for m,p in zip(bp_stmt.mod,bp_stmt.mod_pos)])
+        site_name = '.'.join(['%s%s' %(residue_name[m],p) for m,p in zip(bp_stmt.mod,bp_stmt.mod_pos)])
         flag_name = '.'.join(flag_names[m] for m in bp_stmt.mod)
+        #site_name = '%s%s' % (residue_name[bp_stmt.mod], bp_stmt.mod_pos)
+        #''.join(['%s%s' %(residue_name[m],p) for m,p in zip(bp_stmt.mod,bp_stmt.mod_pos)])
+        #flag_name = flag_names[bp_stmt.mod]
+
         # Get the right statement for the agent/site condition
-        
         if bp_stmt.mod_pos is None:
             condition = '%s.%s' % (agent.name, flag_name)
         else:
-            condition = '%s.%s.%s' % (agent.name, kr_name, flag_name)
+            condition = '%s.%s.%s' % (agent.name, site_name, flag_name)
         # Get the right formula for increases vs. decreases
         if bp_stmt.relationship == 'directlyDecreases':
             qualifier = 'not '
