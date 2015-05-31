@@ -74,9 +74,10 @@ class BelpyKamiConverter(object):
         activity_name = '%s_active' % bp_stmt.activity
         active_attr = agent.get_create_attribute(activity_name)
         # FIXME This should be canonicalized in some way
-        kr_name = ''.join(['%s%s' %(residue_name[m],p) for m,p in zip(bp_stmt.mod,bp_stmt.mod_pos)])
-        flag_name = flag_names[bp_stmt.mod]
+        kr_name = '.'.join(['%s%s' %(residue_name[m],p) for m,p in zip(bp_stmt.mod,bp_stmt.mod_pos)])
+        flag_name = '.'.join(flag_names[m] for m in bp_stmt.mod)
         # Get the right statement for the agent/site condition
+        
         if bp_stmt.mod_pos is None:
             condition = '%s.%s' % (agent.name, flag_name)
         else:
