@@ -78,11 +78,12 @@ class Component(object):
     attributes : dict
         Dictionary mapping the name of an attribute to the Attribute object.
     """
-    def __init__(self, name=None, is_abstract=False, flags=None,
+    def __init__(self, name=None, parent=None, is_abstract=False, flags=None,
                  attributes=None, annotations=None):
         # Get a globally unique, numeric identifier for the component
         self.id = get_id()
         self.name = name
+        self.parent = parent
         self.is_abstract = is_abstract
         # Flags
         self.flags = {}
@@ -110,7 +111,7 @@ class Component(object):
         if flag_name in self.flags:
             return self.flags[flag_name]
         else:
-            flag = Flag(flag_name, None)
+            flag = Flag(flag_name, self, None)
             self.flags[flag_name] = flag
             return flag
 
@@ -123,7 +124,7 @@ class Component(object):
         if attribute_name in self.attributes:
             return self.attributes[attribute_name]
         else:
-            attribute = Attribute(attribute_name, None)
+            attribute = Attribute(attribute_name, self, None)
             self.attributes[attribute_name] = attribute
             return attribute
 
@@ -148,11 +149,12 @@ class Component(object):
 
 class Agent(Component):
     """Top-level nodes containing sites and key residues (e.g., proteins)"""
-    def __init__(self, name, sites=None, key_residues=None, is_abstract=False,
-                 flags=None, attributes=None, annotations=None):
+    def __init__(self, name, sites=None, key_residues=None,
+                 is_abstract=False, flags=None, attributes=None,
+                 annotations=None):
         # Parent constructor
-        super(Agent, self).__init__(name, is_abstract=is_abstract, flags=flags,
-                                    attributes=attributes,
+        super(Agent, self).__init__(name, parent=None, is_abstract=is_abstract,
+                                    flags=flags, attributes=attributes,
                                     annotations=annotations)
         # Sites
         self.sites = {}
@@ -176,7 +178,7 @@ class Agent(Component):
         if site_name in self.sites:
             return self.sites[site_name]
         else:
-            site = Site(site_name)
+            site = Site(site_name, self)
             self.sites[site_name] = site
             return site
 
@@ -189,7 +191,7 @@ class Agent(Component):
         if kr_name in self.key_residues:
             return self.key_residues[kr_name]
         else:
-            kr = KeyResidue(kr_name)
+            kr = KeyResidue(kr_name, self)
             self.key_residues[kr_name] = kr
             return kr
 
@@ -232,11 +234,11 @@ class Site(Component):
 
     Sites can contain key residues but not agents or other sites.
     """
-    def __init__(self, name, key_residues=None, is_abstract=False, flags=None,
-                 attributes=None, annotations=None):
+    def __init__(self, name, parent, key_residues=None, is_abstract=False,
+                 flags=None, attributes=None, annotations=None):
         # Parent constructor
-        super(Site, self).__init__(name, is_abstract=is_abstract, flags=flags,
-                                   attributes=attributes,
+        super(Site, self).__init__(name, parent=parent, is_abstract=is_abstract,
+                                   flags=flags, attributes=attributes,
                                    annotations=annotations)
         # Key residues
         self.key_residues = {}
@@ -268,8 +270,16 @@ class KeyResidue(Component):
     """Amino acid residues defining agent/site functionality.
 
     Because they only have the functionality of the base Component class,
-    a specific constructor is not implemented here.
+    the constructor only calls the parent class.
     """
+    def __init__(self, name, parent, is_abstract=False,
+                 flags=None, attributes=None, annotations=None):
+        # Parent constructor: makes sure 'parent' field is filled out
+        super(KeyResidue, self).__init__(name, parent=parent,
+                                         is_abstract=is_abstract, flags=flags,
+                                         attributes=attributes,
+                                         annotations=annotations)
+
     def render(self, g):
         """Build the graph for the key residue and its subnodes.
 
@@ -284,10 +294,11 @@ class KeyResidue(Component):
         return kr_nodes
 
 class Flag(object):
-    def __init__(self, name, formula=None):
+    def __init__(self, name, parent, formula=None):
         self.id = get_id()
         #self.name = '%s%s' % (name, self.id)
         self.name = name
+        self.parent = parent
         self.formula = formula
         self.style = {'color':'pink', 'style': 'filled', 'shape':'component',
                       'fontname': 'arial', 'fontsize': 10, 'size': 15}
@@ -299,8 +310,8 @@ class Flag(object):
         return flag_nodes
 
 class Attribute(Flag):
-    def __init__(self, name, formula):
-        super(Attribute, self).__init__(name, formula)
+    def __init__(self, name, parent, formula):
+        super(Attribute, self).__init__(name, parent, formula)
         self.style = {'color':'sandybrown', 'style': 'filled',
                       'shape':'component', 'fontname': 'arial',
                       'fontsize': 10, 'size': 15}
