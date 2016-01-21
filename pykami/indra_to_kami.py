@@ -1,6 +1,6 @@
 import pickle
 import sys
-import belpy.statements
+import indra.statements
 from core import *
 
 flag_names = {
@@ -17,7 +17,7 @@ residue_name = {
         'PhosphorylationThreonine': 'T',
         }
 
-class BelpyKamiConverter(object):
+class IndraKamiConverter(object):
 
     def __init__(self):
         self.nodes_dict = {}
@@ -103,14 +103,14 @@ if __name__ == '__main__':
     with open(sys.argv[1]) as f:
         bps = pickle.load(f)
 
-    bkc = BelpyKamiConverter()
+    bkc = IndraKamiConverter()
 
     nodes = set([])
     for stmt in bps:
-        if isinstance(stmt, belpy.statements.Phosphorylation):
+        if isinstance(stmt, indra.statements.Phosphorylation):
             new_nodes = bkc.phosphorylation(stmt)
             nodes.update(new_nodes)
-        elif isinstance(stmt, belpy.statements.ActivityModification):
+        elif isinstance(stmt, indra.statements.ActivityModification):
             new_nodes = bkc.activity_modification(stmt)
             nodes.update(new_nodes)
 
