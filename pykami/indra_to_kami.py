@@ -32,8 +32,8 @@ class IndraKamiConverter(object):
 
     def phosphorylation(self, bp_stmt):
         # Get the names of enzyme and substrate
-        enz_agent = self.get_create_agent(bp_stmt.enz_name)
-        sub_agent = self.get_create_agent(bp_stmt.sub_name)
+        enz_agent = self.get_create_agent(bp_stmt.enz.name)
+        sub_agent = self.get_create_agent(bp_stmt.sub.name)
         nodes = [enz_agent, sub_agent]
         # Get the flag name from the modification
         flag_name = flag_names[bp_stmt.mod]
@@ -68,14 +68,15 @@ class IndraKamiConverter(object):
 
     def activity_modification(self, bp_stmt):
         # Get the agent
-        agent = self.get_create_agent(bp_stmt.monomer_name)
+        agent = self.get_create_agent(bp_stmt.monomer.name)
         nodes = [agent]
         # Add an "activity" attribute to the agent
         activity_name = '%s_active' % bp_stmt.activity
         active_attr = agent.get_create_attribute(activity_name)
 
         # FIXME This should be canonicalized in some way
-        site_name = '.'.join(['%s%s' %(residue_name[m],p) for m,p in zip(bp_stmt.mod,bp_stmt.mod_pos)])
+        site_name = '.'.join(['%s%s' %(residue_name[m],p) \
+                    for m,p in zip(bp_stmt.mod,bp_stmt.mod_pos)])
         flag_name = '.'.join(flag_names[m] for m in bp_stmt.mod)
         #site_name = '%s%s' % (residue_name[bp_stmt.mod], bp_stmt.mod_pos)
         #''.join(['%s%s' %(residue_name[m],p) for m,p in zip(bp_stmt.mod,bp_stmt.mod_pos)])
