@@ -345,8 +345,8 @@ class DirectedBinary(Relationship):
 class Phosphorylation(DirectedBinary):
     def __init__(self, source, target):
         super(Phosphorylation, self).__init__(source, target)
-        self.short_name = 'p'
-        self.id = '%s%s' % (self.short_name, self.id)
+        self.name = 'p'
+        self.id = '%s%s' % (self.name, self.id)
 
 class UndirectedNAry(Relationship):
     def __init__(self):
@@ -364,8 +364,8 @@ class Bind(UndirectedNAry):
     def __init__(self, node1, node2):
         super(Bind, self).__init__()
         self.node_list = [node1, node2]
-        self.short_name = 'b'
-        self.id = '%s%d' % (self.short_name, self.id)
+        self.name = 'b'
+        self.id = '%s%d' % (self.name, self.id)
 
 if __name__ == '__main__':
     nodes = []
