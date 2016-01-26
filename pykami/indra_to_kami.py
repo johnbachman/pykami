@@ -248,6 +248,7 @@ def nodes_to_kami(nodes):
 
             actions_list.append({'class': ['node', 'action', 'mod'],
                                 'name': node.id,
+                                'label': node.id,
                                 'context': context_list})
 
     output['infos'] = [{'scale':1, 'center':'A'}]
