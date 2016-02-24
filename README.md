@@ -1,10 +1,10 @@
 # pykami
 Python interface to the Kami knowledge representation for biochemical models.
 
-Example
-=======
+Examples
+========
 
-The script `indra_to_kami_example.py` gives an example of reading a
+The script `indra_to_kami_example1.py` gives an example of reading a
 natural language sentence and representing it in the Kami format.
 
 The script processes the text "MEK2 phosphorylates ERK1 at Thr-202 and Tyr-204"

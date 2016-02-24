@@ -22,7 +22,7 @@ for stmt in tp.statements:
 output = nodes_to_kami(nodes)
 
 json_str = json.dumps(output, indent=2)
-with open('indra_to_kami_example.json', 'w') as f:
+with open('indra_to_kami_example1.json', 'w') as f:
     f.write(json_str)
 
 
