@@ -261,9 +261,7 @@ def nodes_to_kami(nodes):
     output['actions_binder'] = actions_binder_list
     output['edges'] = edges_list
 
-    json_str = json.dumps(output, indent=2)
-    with open('example.json', 'w') as f:
-        f.write(json_str)
+    #json_str = json.dumps(output, indent=2)
 
     return output
 
@@ -271,18 +269,21 @@ if __name__ == '__main__':
     with open(sys.argv[1]) as f:
         bps = pickle.load(f)
 
-    bkc = IndraKamiConverter()
+    ikc = IndraKamiConverter()
 
     nodes = set([])
     for stmt in bps:
         if isinstance(stmt, indra.statements.Phosphorylation):
-            new_nodes = bkc.phosphorylation(stmt)
+            new_nodes = ikc.phosphorylation(stmt)
             nodes.update(new_nodes)
         elif isinstance(stmt, indra.statements.ActivityModification):
-            new_nodes = bkc.activity_modification(stmt)
+            new_nodes = ikc.activity_modification(stmt)
             nodes.update(new_nodes)
 
     output = nodes_to_kami(nodes)
+
+    with open('kami.json', 'w') as f:
+        f.write(json_str)
 
     #kg = Graph('example_graph', nodes=nodes)
     #kg.render()
